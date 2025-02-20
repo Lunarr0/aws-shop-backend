@@ -2,7 +2,7 @@ from products_mock import products
 import json
 
 def handler(event, context):
-    product_id = event['pathParameters']['id']
+    product_id = event['pathParameters']['productId']
     
     product = next(
         (item for item in products if item["id"] == product_id), 

@@ -4,7 +4,7 @@ info:
   description: API for managing products
   version: 1.0.0
 servers:
-  - url: https://i58jmttgyj.execute-api.us-east-1.amazonaws.com/prod/
+  - url: https://pj8m5nmg5m.execute-api.us-east-1.amazonaws.com/prod/
     description: AWS API Gateway URL
 paths:
   /products:
@@ -29,13 +29,13 @@ paths:
                 $ref: '#/components/schemas/Error'
      
 
-  /products/{id}:
+  /products/{productId}:
     get:
       summary: Get product by ID
       description: Returns a single product by ID
       operationId: getProductById
       parameters:
-        - name: id
+        - name: productId
           in: path
           required: true
           description: ID of the product to retrieve
@@ -81,7 +81,7 @@ components:
           type: string
           example: "Description for product 1"
       required:
-        - id
+        - productId
         - name
         - price
 
@@ -90,7 +90,7 @@ components:
       properties:
         message:
           type: string
-          example: "Error message"
+          example: "Product not found"
       required:
         - message
 
