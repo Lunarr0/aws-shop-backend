@@ -1,4 +1,4 @@
-from products_mock import products
+from product_service.lambda_func.products_mock import products
 import json
 
 def handler(event, context):
