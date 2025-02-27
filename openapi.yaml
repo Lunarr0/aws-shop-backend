@@ -1,0 +1,116 @@
+openapi: 3.0.0
+info:
+  title: Products Service
+  description: API for managing products
+  version: 1.0.0
+servers:
+  - url: https://pj8m5nmg5m.execute-api.us-east-1.amazonaws.com/prod/
+    description: AWS API Gateway URL
+paths:
+  /products:
+    get:
+      summary: List all products
+      description: Returns a list of all products
+      operationId: listProducts
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+     
+
+  /products/{productId}:
+    get:
+      summary: Get product by ID
+      description: Returns a single product by ID
+      operationId: getProductById
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          description: ID of the product to retrieve
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      
+
+components:
+  schemas:
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "1"
+        name:
+          type: string
+          example: "Product 1"
+        price:
+          type: number
+          format: float
+          example: 29.99
+        description:
+          type: string
+          example: "Description for product 1"
+      required:
+        - productId
+        - name
+        - price
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Product not found"
+      required:
+        - message
+
+x-amazon-apigateway-cors:
+  allowOrigins:
+    - '*'
+  allowMethods:
+    - GET
+    - OPTIONS
+  allowHeaders:
+    - Content-Type
+    - X-Amz-Date
+    - Authorization
+    - X-Api-Key
+    - X-Amz-Security-Token
+  maxAge: 300
+
+x-amazon-apigateway-request-validators:
+  basic:
+    validateRequestBody: true
+    validateRequestParameters: true
+
+x-amazon-apigateway-request-validator: basic
