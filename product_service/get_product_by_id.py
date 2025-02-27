@@ -3,11 +3,13 @@ from aws_cdk import (
 )
 from constructs import Construct
 
-def create_get_product_lambda(scope: Construct, id: str) -> _lambda.Function:
+def create_get_product_lambda(scope: Construct, 
+            id: str, environment: dict, role: None) -> _lambda.Function:
     return _lambda.Function(
         scope,
         id,
         runtime=_lambda.Runtime.PYTHON_3_9,
         handler='product_by_id.handler',
-        code=_lambda.Code.from_asset('product_service/lambda_func')
+        code=_lambda.Code.from_asset('product_service/lambda_func'),
+        environment=environment or {}
     )
