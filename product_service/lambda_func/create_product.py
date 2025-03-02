@@ -41,6 +41,7 @@ def validate_product_data(data: Dict) -> tuple[bool, str]:
     
     return True, ""
 
+
 def handler(event, context):
     try:
         print(f"Received event: {event}")
@@ -77,15 +78,30 @@ def handler(event, context):
 
         # Initialize DynamoDB
         dynamodb = boto3.resource('dynamodb', region_name=os.environ['REGION'])
-        products_table = dynamodb.Table(os.environ['PRODUCTS_TABLE_NAME'])
-        stocks_table = dynamodb.Table(os.environ['STOCKS_TABLE_NAME'])
 
-        # Save to DynamoDB
-        print(f"Saving product: {product_data}")
-        products_table.put_item(Item=product_data)
-        
-        print(f"Saving stock: {stock_data}")
-        stocks_table.put_item(Item=stock_data)
+        # Create transaction items
+        transaction_items = [
+            {
+                'Put': {
+                    'TableName': os.environ['PRODUCTS_TABLE_NAME'],
+                    'Item': product_data,
+                    'ConditionExpression': 'attribute_not_exists(id)'
+                }
+            },
+            {
+                'Put': {
+                    'TableName': os.environ['STOCKS_TABLE_NAME'],
+                    'Item': stock_data,
+                    'ConditionExpression': 'attribute_not_exists(product_id)'
+                }
+            }
+        ]
+
+        # Execute transaction
+        print(f"Executing transaction for product: {product_id}")
+        dynamodb.meta.client.transact_write_items(
+            TransactItems=transaction_items
+        )
 
         # Combine product and stock data for response
         response_data = {**product_data, 'count': stock_data['count']}
@@ -96,6 +112,9 @@ def handler(event, context):
             'product': response_data
         })
 
+    except dynamodb.meta.client.exceptions.TransactionCanceledException as e:
+        print(f"Transaction cancelled: {str(e)}")
+        return create_response(400, {'message': 'Failed to create product - transaction cancelled'})
     except json.JSONDecodeError as e:
         print(f"JSON decode error: {str(e)}")
         return create_response(400, {'message': 'Invalid JSON in request body'})
