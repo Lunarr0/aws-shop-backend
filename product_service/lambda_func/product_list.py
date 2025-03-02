@@ -45,6 +45,10 @@ def create_response(status_code: int, body: Any) -> Dict[str, Any]:
 
 def handler(event, context):
     try:
+
+         # Simple log for incoming request
+        print(f"Incoming request: {json.dumps(event)}")
+        print(f"Using DynamoDB table: {os.environ['PRODUCTS_TABLE_NAME']}")
         # Initialize DynamoDB client
         dynamodb = boto3.resource('dynamodb', region_name=os.environ['REGION'])
         
