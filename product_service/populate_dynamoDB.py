@@ -28,11 +28,46 @@ def verify_tables(tables: List[str], dynamodb) -> bool:
             return False
     return True
 
-def batch_write_items(table, items: List[Dict]):
-    """Write items in batches"""
-    with table.batch_writer() as batch:
-        for item in items:
-            batch.put_item(Item=item)
+def create_products_with_transactions(dynamodb, products):
+    """Create products and stocks using transactions"""
+    try:
+        for product in products:
+            product_id = str(uuid.uuid4())
+            
+            # Create transaction items
+            transaction_items = [
+                {
+                    'Put': {
+                        'TableName': PRODUCTS_TABLE,
+                        'Item': {
+                            'id': product_id,
+                            'title': product['title'],
+                            'description': product['description'],
+                            'price': product['price']
+                        }
+                    }
+                },
+                {
+                    'Put': {
+                        'TableName': STOCKS_TABLE,
+                        'Item': {
+                            'product_id': product_id,
+                            'count': 10
+                        }
+                    }
+                }
+            ]
+            
+            # Execute transaction
+            dynamodb.meta.client.transact_write_items(
+                TransactItems=transaction_items
+            )
+            print(f"✅ Created product and stock for {product['title']}")
+
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'TransactionCanceledException':
+            print("❌ Transaction cancelled:", e.response['CancellationReasons'])
+        raise
 
 def populate_tables():
     try:
@@ -42,10 +77,6 @@ def populate_tables():
         if not verify_tables([PRODUCTS_TABLE, STOCKS_TABLE], dynamodb):
             return
         
-        # Get table references
-        products_table = dynamodb.Table(PRODUCTS_TABLE)
-        stocks_table = dynamodb.Table(STOCKS_TABLE)
-
         # Sample product data
         products = [
             {"title": "Vegan Protein Powder", "description": "Organic plant-based protein.", "price": 29},
@@ -53,33 +84,8 @@ def populate_tables():
             {"title": "Quinoa Pasta", "description": "Gluten-free quinoa pasta.", "price": 8}
         ]
 
-        # Prepare items for batch writing
-        product_items = []
-        stock_items = []
-
-        for product in products:
-            product_id = str(uuid.uuid4())
-            
-            product_items.append({
-                "id": product_id,
-                "title": product["title"],
-                "description": product["description"],
-                "price": product["price"]
-            })
-            
-            stock_items.append({
-                "product_id": product_id,
-                "count": 10  # Default stock count
-            })
-
-        # Batch write products
-        print("📝 Writing products...")
-        batch_write_items(products_table, product_items)
-        
-        # Batch write stocks
-        print("📝 Writing stocks...")
-        batch_write_items(stocks_table, stock_items)
-
+        # Create products using transactions
+        create_products_with_transactions(dynamodb, products)
         print("\n🎉 All data inserted successfully!")
 
     except ClientError as e:
