@@ -3,14 +3,17 @@ from aws_cdk import (
     aws_lambda as _lambda,
      aws_iam as iam,
     aws_dynamodb as dynamodb,
+    aws_lambda_event_sources as lambda_event_sources,  
+    Duration
 )
 from constructs import Construct
 from product_service.get_products import create_list_products_lambda
 from product_service.get_product_by_id import create_get_product_lambda
 from product_service.post_create_product import create_product_lambda
+from product_service.catalog_batch_process import create_catalog_batch_process_lambda
 
 class LambdaStack(Stack):
-    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+    def __init__(self, scope: Construct, construct_id: str, catalog_items_queue=None, create_product_topic=None,  **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
         #Referencing DynamoDB
@@ -48,12 +51,34 @@ class LambdaStack(Stack):
                 actions=[
                     'dynamodb:Scan',
                     'dynamodb:GetItem',
-                    'dynamodb:Query'
+                    'dynamodb:Query',
+                    'dynamodb:PutItem' 
                 ],
                 resources=[
                     products_table.table_arn,
                     stocks_table.table_arn
                 ]
+            )
+        )
+          # Add SNS permissions
+        lambda_role.add_to_policy(
+            iam.PolicyStatement(
+                actions=[
+                    'sns:Publish'
+                ],
+                resources=[create_product_topic.topic_arn]
+            )
+        )
+
+        # Add SQS permissions
+        lambda_role.add_to_policy(
+            iam.PolicyStatement(
+                actions=[
+                    'sqs:ReceiveMessage',
+                    'sqs:DeleteMessage',
+                    'sqs:GetQueueAttributes'
+                ],
+                resources=[catalog_items_queue.queue_arn]
             )
         )
         #Creating Lambda functions
@@ -84,6 +109,28 @@ class LambdaStack(Stack):
              role = lambda_role
         )
 
+        # Add the catalog batch process Lambda
+        self.catalog_batch_process = create_catalog_batch_process_lambda(
+            self,
+            "CatalogBatchProcess",
+            environment= {
+                'PRODUCTS_TABLE_NAME': products_table.table_name,
+                "SNS_TOPIC_ARN": create_product_topic.topic_arn
+            },
+            
+            role = lambda_role
+        )
+
+
+         # Add SQS as event source for Lambda
+        self.catalog_batch_process.add_event_source(
+            lambda_event_sources.SqsEventSource(
+                catalog_items_queue,
+                batch_size=5,
+                max_batching_window=Duration.minutes(1)
+            )
+        )
+
          # Granting permissions to Lambda functions
         products_table.grant_read_data(self.list_products_lambda)
         stocks_table.grant_read_data(self.list_products_lambda)
@@ -91,6 +138,10 @@ class LambdaStack(Stack):
         stocks_table.grant_read_data(self.get_product_lambda)
         products_table.grant_write_data(self.product_lambda)
         stocks_table.grant_write_data(self.product_lambda)
+        products_table.grant_write_data(self.catalog_batch_process)
+        create_product_topic.grant_publish(self.catalog_batch_process)
+         # Grant SQS permissions
+        catalog_items_queue.grant_consume_messages(self.catalog_batch_process)
 
     @property
     def list_products_function(self):
