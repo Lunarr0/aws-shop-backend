@@ -1,7 +1,8 @@
-aws-cdk-lib==2.178.1
+aws-cdk-lib~=2.0.0
 constructs>=10.0.0,<11.0.0
 pytest>=6.0
 pytest-cov
 # aws-cdk.aws-lambda
 # aws-cdk.aws-apigateway
-# boto3
+aws-lambda-powertools>=2.0.0
+boto3>=1.26.0
