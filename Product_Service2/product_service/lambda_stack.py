@@ -75,6 +75,7 @@ class LambdaStack(Stack):
             iam.PolicyStatement(
                 actions=[
                     'sqs:ReceiveMessage',
+                    'sqs:SendMessage',
                     'sqs:DeleteMessage',
                     'sqs:GetQueueAttributes'
                 ],
@@ -85,7 +86,9 @@ class LambdaStack(Stack):
         common_env = {
             'PRODUCTS_TABLE_NAME': products_table.table_name,
             'STOCKS_TABLE_NAME': stocks_table.table_name,
-            'REGION' : Stack.of(self).region
+            'REGION' : Stack.of(self).region,
+            'SQS_QUEUE_URL': catalog_items_queue.queue_url,  
+            'SNS_TOPIC_ARN': create_product_topic.topic_arn  
         }
 
         self.product_lambda = create_product_lambda(
@@ -113,11 +116,7 @@ class LambdaStack(Stack):
         self.catalog_batch_process = create_catalog_batch_process_lambda(
             self,
             "CatalogBatchProcess",
-            environment= {
-                'PRODUCTS_TABLE_NAME': products_table.table_name,
-                "SNS_TOPIC_ARN": create_product_topic.topic_arn
-            },
-            
+            environment= common_env,
             role = lambda_role
         )
 
@@ -142,6 +141,9 @@ class LambdaStack(Stack):
         create_product_topic.grant_publish(self.catalog_batch_process)
          # Grant SQS permissions
         catalog_items_queue.grant_consume_messages(self.catalog_batch_process)
+        self.catalog_batch_process.add_environment("SQS_QUEUE_URL", catalog_items_queue.queue_url)
+        self.catalog_batch_process.add_environment("SNS_TOPIC_ARN", create_product_topic.topic_arn)
+        self.catalog_batch_process.add_environment("DYNAMODB_TABLE_NAME", "products")  
 
     @property
     def list_products_function(self):

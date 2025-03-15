@@ -1,12 +1,13 @@
 # product_service/catalog_batch_process.py
 from aws_cdk import (
     aws_lambda as _lambda,
+    aws_iam as iam,
     Duration
 )
 from constructs import Construct
 
 def create_catalog_batch_process_lambda(scope: Construct, 
-            id: str, environment: dict, role: None) -> _lambda.Function:
+            id: str, environment: dict, role: iam.Role) -> _lambda.Function:
     return _lambda.Function(
         scope,
         id,
