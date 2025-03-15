@@ -8,6 +8,10 @@ def lambda_handler(event, context):
     try:
         # Get S3 client
         s3_client = boto3.client('s3')
+        sqs = boto3.client('sqs')
+
+         # Get SQS queue URL from environment variable
+        queue_url = os.environ['SQS_QUEUE_URL']
         
         # Get bucket and file details from the S3 event
         bucket = event['Records'][0]['s3']['bucket']['name']
@@ -30,7 +34,11 @@ def lambda_handler(event, context):
         # Process each row
         for row in csv_reader:
             # Log each record
-            print(f"Parsed record: {json.dumps(row)}")
+            # print(f"Parsed record: {json.dumps(row)}")
+             sqs.send_message(
+                QueueUrl=queue_url,
+                MessageBody=json.dumps(row)
+            )
             
         # Move file to parsed folder
         new_key = key.replace('uploaded/', 'parsed/')
