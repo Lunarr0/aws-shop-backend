@@ -3,31 +3,21 @@ import unittest
 from unittest.mock import patch, MagicMock
 import json
 import os
-from lambda_func.catalog_batch_process import lambda_handler
 
+@patch('Product_Service2.product_service.lambda_func.catalog_batch.sns')
+@patch('Product_Service2.product_service.lambda_func.catalog_batch.dynamodb')
 class TestCatalogBatchProcess(unittest.TestCase):
-    @patch('boto3.resource')
-    @patch('boto3.client')
-    def setUp(self, mock_boto3_client, mock_boto3_resource):
-        self.mock_dynamodb = MagicMock()
-        self.mock_table = MagicMock()
-        self.mock_sns = MagicMock()
-        
-        mock_boto3_resource.return_value = self.mock_dynamodb
-        mock_boto3_client.return_value = self.mock_sns
-        
-        self.mock_dynamodb.Table.return_value = self.mock_table
-        
+    def setUp(self):
         # Set environment variables
-        os.environ['SNS_TOPIC_ARN'] = 'mock-topic-arn'
+        os.environ['SNS_TOPIC_ARN'] = 'arn:aws:sns:us-east-1:123456789012:test-topic'
         os.environ['PRODUCTS_TABLE_NAME'] = 'products'
+        os.environ['STOCKS_TABLE_NAME'] = 'stocks'
 
-    def test_successful_processing(self):
+    def test_successful_processing(self, mock_dynamodb, mock_sns):
         # Prepare test data
         test_event = {
             'Records': [{
                 'body': json.dumps({
-                    'id': '1',
                     'title': 'Test Product',
                     'description': 'Test Description',
                     'price': 150,
@@ -36,25 +26,30 @@ class TestCatalogBatchProcess(unittest.TestCase):
             }]
         }
 
+        # Configure mock successful response
+        mock_dynamodb.transact_write_items.return_value = {'ResponseMetadata': {'RequestId': '1234'}}
+
+        # Import lambda_handler here after mocks are in place
+        from Product_Service2.product_service.lambda_func.catalog_batch import lambda_handler
+        
         # Execute lambda
         response = lambda_handler(test_event, None)
 
-        # Assert DynamoDB put_item was called
-        self.mock_table.put_item.assert_called_once()
+        # Assert DynamoDB transact_write_items was called
+        mock_dynamodb.transact_write_items.assert_called_once()
         
-        # Assert SNS publish was called with correct parameters
-        self.mock_sns.publish.assert_called_once()
+        # Assert SNS publish was called
+        mock_sns.publish.assert_called_once()
         
         # Verify the response
         self.assertEqual(response['statusCode'], 200)
 
-    def test_multiple_records_processing(self):
+    def test_multiple_records_processing(self, mock_dynamodb, mock_sns):
         # Test processing multiple records
         test_event = {
             'Records': [
                 {
                     'body': json.dumps({
-                        'id': '1',
                         'title': 'Product 1',
                         'description': 'Description 1',
                         'price': 150,
@@ -63,7 +58,6 @@ class TestCatalogBatchProcess(unittest.TestCase):
                 },
                 {
                     'body': json.dumps({
-                        'id': '2',
                         'title': 'Product 2',
                         'description': 'Description 2',
                         'price': 50,
@@ -73,23 +67,27 @@ class TestCatalogBatchProcess(unittest.TestCase):
             ]
         }
 
+        # Configure mock successful response
+        mock_dynamodb.transact_write_items.return_value = {'ResponseMetadata': {'RequestId': '1234'}}
+
+        # Import lambda_handler here after mocks are in place
+        from Product_Service2.product_service.lambda_func.catalog_batch import lambda_handler
+        
         response = lambda_handler(test_event, None)
         
-        # Assert DynamoDB put_item was called twice
-        self.assertEqual(self.mock_table.put_item.call_count, 2)
+        # Assert DynamoDB transact_write_items was called twice (once for each record)
+        self.assertEqual(mock_dynamodb.transact_write_items.call_count, 2)
         
         # Assert SNS publish was called once with both products
-        self.mock_sns.publish.assert_called_once()
+        mock_sns.publish.assert_called_once()
         self.assertEqual(response['statusCode'], 200)
 
-    def test_error_handling(self):
-        # Test error handling
-        self.mock_table.put_item.side_effect = Exception('Test error')
-        
+    def test_error_handling(self, mock_dynamodb, mock_sns):
+        mock_dynamodb.transact_write_items.side_effect = Exception("Test error")
+
         test_event = {
             'Records': [{
                 'body': json.dumps({
-                    'id': '1',
                     'title': 'Test Product',
                     'description': 'Test Description',
                     'price': 150,
@@ -98,14 +96,34 @@ class TestCatalogBatchProcess(unittest.TestCase):
             }]
         }
 
-        with self.assertRaises(Exception):
-            lambda_handler(test_event, None)
-            
-        # Assert error notification was sent to SNS
-        self.mock_sns.publish.assert_called_once()
+        #import lambda_handler here after mocks are in place
+        from Product_Service2.product_service.lambda_func.catalog_batch import lambda_handler
 
-    def test_invalid_message_format(self):
-        # Test handling of invalid message format
+
+       # The lambda should NOT raise the exception (it catches it internally)
+        response = lambda_handler(test_event, None)
+
+        # Assert DynamoDB transact_write_items was called
+        mock_dynamodb.transact_write_items.assert_called_once()
+
+        #Since the error is caught internally, then no products are added to successful_products
+        mock_sns.publish.assert_called_once_with(
+        TopicArn=os.environ['SNS_TOPIC_ARN'],
+            Subject='Products Created Successfully',
+            Message=mock_sns.publish.call_args[1]['Message'],  # Dynamic message content
+            MessageAttributes={
+                'price': {
+                    'DataType': 'Number',
+                    'StringValue': '150'
+                }
+            }
+        )
+
+        #verify the response is still 200 (function handles errors gracefully)
+        self.assertEqual(response['statusCode'], 200)
+
+
+    def test_invalid_message_format(self, mock_dynamodb, mock_sns):
         test_event = {
             'Records': [{
                 'body': json.dumps({
@@ -114,10 +132,15 @@ class TestCatalogBatchProcess(unittest.TestCase):
             }]
         }
 
-        with self.assertRaises(Exception):
+        # Import lambda_handler here after mocks are in place
+        from Product_Service2.product_service.lambda_func.catalog_batch import lambda_handler
+        
+        # Should raise KeyError due to missing required fields
+        with self.assertRaises(KeyError):
             lambda_handler(test_event, None)
 
     def tearDown(self):
         # Clean up environment variables
         os.environ.pop('SNS_TOPIC_ARN', None)
         os.environ.pop('PRODUCTS_TABLE_NAME', None)
+        os.environ.pop('STOCKS_TABLE_NAME', None)
