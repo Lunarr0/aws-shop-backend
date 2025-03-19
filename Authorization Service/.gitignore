@@ -1,10 +1,15 @@
-*.swp
-package-lock.json
-__pycache__
-.pytest_cache
-.venv
-*.egg-info
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+.env.backup
+*.env
 
-# CDK asset staging directory
-.cdk.staging
-cdk.out
+# Environment directories
+env/
+.env/
+venv/
+.venv/
