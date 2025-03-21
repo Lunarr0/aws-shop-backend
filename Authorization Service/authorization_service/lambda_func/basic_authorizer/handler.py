@@ -3,16 +3,17 @@ import os
 import json
 import base64
 
+
 def lambda_handler(event, context):
     print(f"Event: {json.dumps(event)}")
-    authorization_header = event['authorizationToken']
+    #authorization_header = event['authorizationToken']
 
     if 'authorizationToken' not in event:
         return {
             'statusCode':401,
             'body': json.dumps({
                 'message': 'Unauthorized'
-            })'
+            })
         }
         
         #generate_policy('undefined', 'Deny', event['methodArn'])
@@ -25,21 +26,28 @@ def lambda_handler(event, context):
         
         # Decode credentials
         decoded = base64.b64decode(token).decode('utf-8')
-        username, password = decoded.split(':')
+        username, password = decoded.split('=')
         password = password.strip()
 
         # Get stored credentials from environment
         # stored_username = os.environ.get('AUTH_USER')
         # stored_password = os.environ.get('AUTH_PASSWORD')
-        stored_credentials = os.getenv(username)
+        stored_password  = os.getenv(username)
 
         # Verify credentials
-        if username == stored_username and password == stored_password:
+        if stored_password and stored_password == password :
             effect = 'Allow'
+            return generate_policy(username, effect, event['methodArn'])
         else:
-            effect = 'Deny'
+            # effect = 'Deny'
+            return {
+                'statusCode': 403,
+                'body': json.dumps({
+                    'message': 'Forbidden'
+                })
+            }
 
-        return generate_policy(token, effect, event['methodArn'])
+       
 
     except Exception as e:
         print(f"Error: {str(e)}")
@@ -58,3 +66,5 @@ def generate_policy(principal_id: str, effect: str, resource: str) -> dict:
             }]
         }
     }
+
+print(generate_policy('user321', 'Allow', 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'))

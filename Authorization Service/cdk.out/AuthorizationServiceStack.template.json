@@ -41,7 +41,7 @@
      "S3Bucket": {
       "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
      },
-     "S3Key": "67761ed88faf5be0aa483c55d94ae2aee1d2c94d18c51dd937471e341fc9cfcf.zip"
+     "S3Key": "943dd9f7f5bd5d9c5e48a61bc3122b8f7e89b197091a36b6f4ac3667ff1731cb.zip"
     },
     "Environment": {
      "Variables": {
@@ -63,7 +63,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "AuthorizationServiceStack/BasicAuthorizerFunction/Resource",
-    "aws:asset:path": "asset.67761ed88faf5be0aa483c55d94ae2aee1d2c94d18c51dd937471e341fc9cfcf",
+    "aws:asset:path": "asset.943dd9f7f5bd5d9c5e48a61bc3122b8f7e89b197091a36b6f4ac3667ff1731cb",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Code"
    }
