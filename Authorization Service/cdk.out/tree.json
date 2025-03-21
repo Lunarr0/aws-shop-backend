@@ -1,0 +1,316 @@
+{
+  "version": "tree-0.1",
+  "tree": {
+    "id": "App",
+    "path": "",
+    "children": {
+      "AuthorizationServiceStack": {
+        "id": "AuthorizationServiceStack",
+        "path": "AuthorizationServiceStack",
+        "children": {
+          "BasicAuthorizerFunction": {
+            "id": "BasicAuthorizerFunction",
+            "path": "AuthorizationServiceStack/BasicAuthorizerFunction",
+            "children": {
+              "ServiceRole": {
+                "id": "ServiceRole",
+                "path": "AuthorizationServiceStack/BasicAuthorizerFunction/ServiceRole",
+                "children": {
+                  "ImportServiceRole": {
+                    "id": "ImportServiceRole",
+                    "path": "AuthorizationServiceStack/BasicAuthorizerFunction/ServiceRole/ImportServiceRole",
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.Resource",
+                      "version": "2.181.1",
+                      "metadata": [
+                        "*"
+                      ]
+                    }
+                  },
+                  "Resource": {
+                    "id": "Resource",
+                    "path": "AuthorizationServiceStack/BasicAuthorizerFunction/ServiceRole/Resource",
+                    "attributes": {
+                      "aws:cdk:cloudformation:type": "AWS::IAM::Role",
+                      "aws:cdk:cloudformation:props": {
+                        "assumeRolePolicyDocument": {
+                          "Statement": [
+                            {
+                              "Action": "sts:AssumeRole",
+                              "Effect": "Allow",
+                              "Principal": {
+                                "Service": "lambda.amazonaws.com"
+                              }
+                            }
+                          ],
+                          "Version": "2012-10-17"
+                        },
+                        "managedPolicyArns": [
+                          {
+                            "Fn::Join": [
+                              "",
+                              [
+                                "arn:",
+                                {
+                                  "Ref": "AWS::Partition"
+                                },
+                                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                              ]
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.aws_iam.CfnRole",
+                      "version": "2.181.1"
+                    }
+                  }
+                },
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.aws_iam.Role",
+                  "version": "2.181.1",
+                  "metadata": [
+                    {
+                      "assumedBy": {
+                        "principalAccount": "*",
+                        "assumeRoleAction": "*"
+                      },
+                      "managedPolicies": [
+                        {
+                          "managedPolicyArn": "*"
+                        }
+                      ]
+                    },
+                    {
+                      "attachInlinePolicy": [
+                        "*"
+                      ]
+                    },
+                    {
+                      "attachInlinePolicy": [
+                        "*"
+                      ]
+                    }
+                  ]
+                }
+              },
+              "Code": {
+                "id": "Code",
+                "path": "AuthorizationServiceStack/BasicAuthorizerFunction/Code",
+                "children": {
+                  "Stage": {
+                    "id": "Stage",
+                    "path": "AuthorizationServiceStack/BasicAuthorizerFunction/Code/Stage",
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.AssetStaging",
+                      "version": "2.181.1"
+                    }
+                  },
+                  "AssetBucket": {
+                    "id": "AssetBucket",
+                    "path": "AuthorizationServiceStack/BasicAuthorizerFunction/Code/AssetBucket",
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.aws_s3.BucketBase",
+                      "version": "2.181.1",
+                      "metadata": []
+                    }
+                  }
+                },
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.aws_s3_assets.Asset",
+                  "version": "2.181.1"
+                }
+              },
+              "Resource": {
+                "id": "Resource",
+                "path": "AuthorizationServiceStack/BasicAuthorizerFunction/Resource",
+                "attributes": {
+                  "aws:cdk:cloudformation:type": "AWS::Lambda::Function",
+                  "aws:cdk:cloudformation:props": {
+                    "code": {
+                      "s3Bucket": {
+                        "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+                      },
+                      "s3Key": "943dd9f7f5bd5d9c5e48a61bc3122b8f7e89b197091a36b6f4ac3667ff1731cb.zip"
+                    },
+                    "environment": {
+                      "variables": {
+                        "Lunarr0": "TEST_PASSWORD"
+                      }
+                    },
+                    "functionName": "AuthFunction",
+                    "handler": "handler.lambda_handler",
+                    "role": {
+                      "Fn::GetAtt": [
+                        "BasicAuthorizerFunctionServiceRole50E2CC6A",
+                        "Arn"
+                      ]
+                    },
+                    "runtime": "python3.9"
+                  }
+                },
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.aws_lambda.CfnFunction",
+                  "version": "2.181.1"
+                }
+              },
+              "inlinePolicyAddedToExecutionRole-0": {
+                "id": "inlinePolicyAddedToExecutionRole-0",
+                "path": "AuthorizationServiceStack/BasicAuthorizerFunction/inlinePolicyAddedToExecutionRole-0",
+                "children": {
+                  "Resource": {
+                    "id": "Resource",
+                    "path": "AuthorizationServiceStack/BasicAuthorizerFunction/inlinePolicyAddedToExecutionRole-0/Resource",
+                    "attributes": {
+                      "aws:cdk:cloudformation:type": "AWS::IAM::Policy",
+                      "aws:cdk:cloudformation:props": {
+                        "policyDocument": {
+                          "Statement": [
+                            {
+                              "Action": "execute-api:Invoke",
+                              "Effect": "Allow",
+                              "Resource": "*"
+                            }
+                          ],
+                          "Version": "2012-10-17"
+                        },
+                        "policyName": "BasicAuthorizerFunctioninlinePolicyAddedToExecutionRole0A9BBD8DA",
+                        "roles": [
+                          {
+                            "Ref": "BasicAuthorizerFunctionServiceRole50E2CC6A"
+                          }
+                        ]
+                      }
+                    },
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.aws_iam.CfnPolicy",
+                      "version": "2.181.1"
+                    }
+                  }
+                },
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.aws_iam.Policy",
+                  "version": "2.181.1",
+                  "metadata": [
+                    {
+                      "statements": "*"
+                    },
+                    {
+                      "addStatements": [
+                        {}
+                      ]
+                    },
+                    {
+                      "attachToRole": [
+                        "*"
+                      ]
+                    },
+                    {
+                      "attachToRole": [
+                        "*"
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.aws_lambda.Function",
+              "version": "2.181.1",
+              "metadata": [
+                {
+                  "environment": "*",
+                  "functionName": "*",
+                  "code": "*",
+                  "handler": "*",
+                  "runtime": "*"
+                },
+                {
+                  "addEnvironment": [
+                    "*",
+                    "*"
+                  ]
+                }
+              ]
+            }
+          },
+          "BasicAuthorizerLambdaArn": {
+            "id": "BasicAuthorizerLambdaArn",
+            "path": "AuthorizationServiceStack/BasicAuthorizerLambdaArn",
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.CfnOutput",
+              "version": "2.181.1"
+            }
+          },
+          "BasicAuthorizerFunctionName": {
+            "id": "BasicAuthorizerFunctionName",
+            "path": "AuthorizationServiceStack/BasicAuthorizerFunctionName",
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.CfnOutput",
+              "version": "2.181.1"
+            }
+          },
+          "CDKMetadata": {
+            "id": "CDKMetadata",
+            "path": "AuthorizationServiceStack/CDKMetadata",
+            "children": {
+              "Default": {
+                "id": "Default",
+                "path": "AuthorizationServiceStack/CDKMetadata/Default",
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.CfnResource",
+                  "version": "2.181.1"
+                }
+              },
+              "Condition": {
+                "id": "Condition",
+                "path": "AuthorizationServiceStack/CDKMetadata/Condition",
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.CfnCondition",
+                  "version": "2.181.1"
+                }
+              }
+            },
+            "constructInfo": {
+              "fqn": "constructs.Construct",
+              "version": "10.4.2"
+            }
+          },
+          "BootstrapVersion": {
+            "id": "BootstrapVersion",
+            "path": "AuthorizationServiceStack/BootstrapVersion",
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.CfnParameter",
+              "version": "2.181.1"
+            }
+          },
+          "CheckBootstrapVersion": {
+            "id": "CheckBootstrapVersion",
+            "path": "AuthorizationServiceStack/CheckBootstrapVersion",
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.CfnRule",
+              "version": "2.181.1"
+            }
+          }
+        },
+        "constructInfo": {
+          "fqn": "aws-cdk-lib.Stack",
+          "version": "2.181.1"
+        }
+      },
+      "Tree": {
+        "id": "Tree",
+        "path": "Tree",
+        "constructInfo": {
+          "fqn": "constructs.Construct",
+          "version": "10.4.2"
+        }
+      }
+    },
+    "constructInfo": {
+      "fqn": "aws-cdk-lib.App",
+      "version": "2.181.1"
+    }
+  }
+}

@@ -6,6 +6,9 @@ from aws_cdk import (
 from constructs import Construct
 
 def create_api_gateway(scope: Construct, import_products_lambda: _lambda.Function) -> apigateway.RestApi:
+   
+    basic_authorizer_lambda =  _lambda.Function.from_function_name(scope, "authFunction","AuthFunction")
+   
     # Create API Gateway
     api = apigateway.RestApi(
         scope, 'ImportApi',
@@ -20,6 +23,12 @@ def create_api_gateway(scope: Construct, import_products_lambda: _lambda.Functio
         )
     )
 
+    authorizer = apigateway.TokenAuthorizer(
+        scope, 'BasicAuthorizer',
+        handler=basic_authorizer_lambda,
+        identity_source='method.request.header.Authorization'
+    )
+
     # Create API resource and method
     import_resource = api.root.add_resource('import')
     
@@ -31,7 +40,9 @@ def create_api_gateway(scope: Construct, import_products_lambda: _lambda.Functio
         },
         request_validator_options=apigateway.RequestValidatorOptions(
             validate_request_parameters=True
-        )
+        ),
+        authorization_type=apigateway.AuthorizationType.CUSTOM,
+        authorizer=authorizer
     )
 
     # Output the API URL
