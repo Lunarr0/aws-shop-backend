@@ -6,9 +6,9 @@ import base64
 
 def lambda_handler(event, context):
     print(f"Event: {json.dumps(event)}")
-    #authorization_header = event['authorizationToken']
+    authorization_header = event['authorizationToken']
 
-    if 'authorizationToken' not in event:
+    if not authorization_header:
         return {
             'statusCode':401,
             'body': json.dumps({

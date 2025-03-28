@@ -42,7 +42,17 @@ def create_api_gateway(scope: Construct, import_products_lambda: _lambda.Functio
             validate_request_parameters=True
         ),
         authorization_type=apigateway.AuthorizationType.CUSTOM,
-        authorizer=authorizer
+        authorizer=authorizer,
+        method_responses=[
+            apigateway.MethodResponse(
+                status_code='200',
+                response_parameters={
+                    "method.response.header.Access-Control-Allow-Origin": True,
+                    "method.response.header.Access-Control-Allow-Headers": True,
+                    "method.response.header.Access-Control-Allow-Methods": True,
+                }
+            )
+        ]
     )
 
     # Output the API URL
